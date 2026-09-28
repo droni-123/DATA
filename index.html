@@ -1,0 +1,185 @@
+260924 12:16 43.31kwh, <!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한글 타자 연습 게임</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 360px;
+        }
+        h1 { font-size: 24px; color: #333; margin-bottom: 20px; }
+        .word-box {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2b6cb0;
+            background: #ebf8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #cbd5e0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            text-align: center;
+            outline: none;
+        }
+        input[type="text"]:focus { border-color: #3182ce; }
+        .stats {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        .btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover { background: #2b6cb0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⌨️ 한글 타자 연습</h1>
+    <div class="word-box" id="targetWord">준비 버튼을 누르세요</div>
+    <input type="text" id="userInput" placeholder="단어를 입력하고 Enter" disabled>
+    
+    <button class="btn" id="startBtn" onclick="startGame()">게임 시작</button>
+
+    <div class="stats">
+        <div>진행: <span id="progress">0/10</span></div>
+        <div>실시간 타수: <span id="cpm">0</span> CPM</div>
+    </div>
+</div>
+
+<script>
+    const wordList = [
+        "동기조상기", "플라이휠", "전력계통", "태양광발전", "에너지저장",
+        "파이썬프로그래밍", "미래사회융합", "안전제일", "학습설계", "스마트전력"
+    ];
+
+    let currentWord = "";
+    let currentIndex = 0;
+    let totalWords = 10;
+    let startTime = 0;
+    let wordStartTime = 0;
+    let isPlaying = false;
+
+    function generateRandomWord() {
+        const CHO = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+        const JOUNG = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ"];
+        const JONG = ["","ㄱ","ㄲ","ㄳ","ㄴ","ㄵ","ㄶ","ㄷ","ㄹ","ㄺ","ㄻ","ㄼ","ㄽ","ㄾ","ㄿ","ㅀ","ㅁ","ㅂ","ㅄ","ㅅ","ㅆ","ㅇ","ㅈ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+
+        let word = "";
+        for (let i = 0; i < 3; i++) {
+            let c = Math.floor(Math.random() * CHO.length);
+            let j = Math.floor(Math.random() * JOUNG.length);
+            let v = Math.floor(Math.random() * JONG.length);
+            word += String.fromCharCode((c * 21 + j) * 28 + v + 0xAC00);
+        }
+        return word;
+    }
+
+    function startGame() {
+        isPlaying = true;
+        currentIndex = 0;
+        document.getElementById("startBtn").style.display = "none";
+        const input = document.getElementById("userInput");
+        input.disabled = false;
+        input.value = "";
+        input.focus();
+        
+        startTime = new Date().getTime();
+        nextWord();
+    }
+
+    function nextWord() {
+        if (currentIndex >= totalWords) {
+            endGame();
+            return;
+        }
+        currentIndex++;
+        document.getElementById("progress").innerText = `${currentIndex}/${totalWords}`;
+        
+        // 50% 확률로 단어장 단어 또는 한글 조합 단어 출제
+        if (Math.random() > 0.5) {
+            currentWord = wordList[Math.floor(Math.random() * wordList.length)];
+        } else {
+            currentWord = generateRandomWord();
+        }
+        
+        document.getElementById("targetWord").innerText = currentWord;
+        wordStartTime = new Date().getTime();
+    }
+
+    document.getElementById("userInput").addEventListener("keyup", function(e) {
+        if (e.key === "Enter" && isPlaying) {
+            const userVal = this.value.trim();
+            if (userVal === currentWord) {
+                const now = new Date().getTime();
+                const timeTaken = (now - wordStartTime) / 1000;
+                const cpm = Math.round((currentWord.length * 2.5 / timeTaken) * 60);
+                
+                document.getElementById("cpm").innerText = cpm;
+                this.value = "";
+                nextWord();
+            } else {
+                this.style.borderColor = "#e53e3e";
+                setTimeout(() => this.style.borderColor = "#cbd5e0", 500);
+            }
+        }
+    });
+
+    function endGame() {
+        isPlaying = false;
+        const totalTime = ((new Date().getTime() - startTime) / 1000).toFixed(1);
+        document.getElementById("targetWord").innerText = "🎉 연습 완료!";
+        const input = document.getElementById("userInput");
+        input.disabled = true;
+        input.value = "";
+        document.getElementById("startBtn").style.display = "inline-block";
+        document.getElementById("startBtn").innerText = "다시 하기";
+        alert(`수고하셨습니다!\n총 소요 시간: ${totalTime}초`);
+    }
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
